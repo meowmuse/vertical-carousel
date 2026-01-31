@@ -9,9 +9,7 @@
     :root{
       --L: 160px;
 
-      /* ЕЩЁ ПЛАВНЕЕ */
       --dur: 780ms;
-      /* мягкая “пружина” без реального spring */
       --ease: cubic-bezier(.12, 1.05, .18, 1);
 
       --glow-1: rgba(255, 200, 90, .58);
@@ -33,20 +31,10 @@
       height:786px;
       position:relative;
       overflow:hidden;
-      border-radius:22px;
-      background:rgba(255,255,255,.04);
+      border-radius:28px;
+      background: rgba(255,255,255,.035); /* мягкий общий фон, без полосы по центру */
       user-select:none;
       touch-action:pan-y;
-    }
-
-    .centerHint{
-      position:absolute;
-      left:0; right:0;
-      top:50%;
-      height:220px;
-      transform:translateY(-50%);
-      background:rgba(255,255,255,.03);
-      pointer-events:none;
     }
 
     .item{
@@ -71,8 +59,8 @@
 
       background:#1a1a1a;
       box-shadow:
-        0 0 0 4px rgba(255,185,70,0.35),
-        0 0 30px rgba(255,185,70,0.25);
+        0 0 0 2px rgba(255,185,70,0.28),
+        0 0 28px rgba(255,185,70,0.18);
     }
 
     .item.noTrans{ transition:none !important; }
@@ -80,26 +68,24 @@
     .label{
       font-weight:700;
       letter-spacing:.06em;
-      font-size:14px;
+      font-size:12px;
       text-transform:uppercase;
       opacity:.95;
     }
 
-    /* Активная */
+    /* Активная (самая большая) — подсветка только у неё */
     .item[data-level="L"]{
-      filter: saturate(1.14) brightness(1.09) blur(0px);
+      filter: saturate(1.14) brightness(1.10) blur(0px);
       box-shadow:
-        0 0 0 4px rgba(255,185,70,0.56),
-        0 0 52px var(--glow-1),
+        0 0 0 3px rgba(255,185,70,0.55),
+        0 0 46px var(--glow-1),
         0 0 110px var(--glow-2);
     }
 
-    /* Средние — чуть мягче */
     .item[data-level="M"]{
       filter: saturate(1.02) brightness(1.02) blur(.15px);
     }
 
-    /* Маленькие — пикер-эффект */
     .item[data-level="S"]{
       filter: saturate(.95) brightness(.98) blur(.35px);
     }
@@ -112,8 +98,6 @@
 
 <body>
   <div class="wheel" id="wheel" aria-label="Вертикальная карусель">
-    <div class="centerHint"></div>
-
     <!-- 9 элементов: позиции -4..+4 -->
     <div class="item"><div class="label"></div></div>
     <div class="item"><div class="label"></div></div>
@@ -132,10 +116,9 @@
     const wheel = document.getElementById('wheel');
     const items = Array.from(wheel.querySelectorAll('.item'));
 
-    // Твои размеры
+    // Design tokens (from Figma): L=160, M=120, S=90, GAP=29px
     const L = 160, M = 120, S = 90, GAP = 29;
 
-    // gap 29px визуально
     const d1 = (L + M)/2 + GAP;              // 169
     const d2 = d1 + (M + S)/2 + GAP;         // 303
     const stepSS = (S + S)/2 + GAP;          // 119
@@ -144,10 +127,10 @@
 
     const mod = (n, m) => ((n % m) + m) % m;
 
-    let activeIndex = 2; // старт
+    let activeIndex = 2;
     let animLock = false;
 
-    // Очередь шагов (для очень плавного wheel/trackpad)
+    // очередь шагов для мягкого wheel
     const queue = [];
     function enqueueStep(dir){
       queue.push(dir);
@@ -171,7 +154,6 @@
       const rect = wheel.getBoundingClientRect();
       const halfH = rect.height / 2;
 
-      // большой запас — чтобы ничего не “вылезало”
       const minOffscreen = halfH + (L / 2) + 260;
 
       d3 = Math.max(d2 + stepSS, minOffscreen);
@@ -257,12 +239,11 @@
       });
     }
 
-    /* controls */
+    // wheel только при наведении
     let hovered = false;
     wheel.addEventListener('mouseenter', () => hovered = true);
     wheel.addEventListener('mouseleave', () => hovered = false);
 
-    // “мягкий” wheel: сильный скролл = несколько шагов в очередь
     let wheelAccum = 0;
     let wheelTimer = null;
 
@@ -283,7 +264,7 @@
       }, 60);
     }, { passive:false });
 
-    // Touch swipe (пошагово)
+    // touch swipe
     let startY = 0;
     let dragging = false;
 
